@@ -42,8 +42,9 @@
   - camera tracks ball and frames a tighter gameplay subset
   - hoop orientation switched to left/right court ends
 - Added keyboard gameplay controls:
-  - `S` = Shot attempt
-  - `D` = Dunk attempt
+  - `Arrow Keys` = Move
+  - `Space` = Jump
+  - `Hold + Release S` = Timed jump shot / dunk-attempt logic
   - `A` = Steal attempt
   - `F` = Pass attempt
   - `C` = Call for pass
@@ -53,3 +54,8 @@
 npm install
 npm run dev
 ```
+
+## 🔧 Recent Fixes
+- Added player movement and jump physics for the human-controlled player.
+- Fixed possession bug: shots and dunks now require ball possession; missed shots no longer auto-return possession on key press.
+- Added shot hold/release timing mechanic tied to jump context and contest penalties.

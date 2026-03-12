@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { GameLoop } from './core/GameLoop'
 import { GameStateManager } from './core/GameStateManager'
 import { InputController } from './core/InputController'
@@ -10,21 +10,35 @@ import { RulesPanel } from './ui/RulesPanel'
 export function App() {
   const stateManager = useMemo(() => new GameStateManager(), [])
   const input = useMemo(() => new InputController(), [])
-
   const [state, setState] = useState<Readonly<GameState>>(stateManager.getState())
+  const wasChargingRef = useRef(false)
 
   useEffect(() => {
     input.attach()
 
     const loop = new GameLoop(() => {
-      if (input.isPressed('KeyS')) stateManager.attemptShot(0)
-      if (input.isPressed('KeyD')) stateManager.attemptDunk(0)
-      if (input.isPressed('KeyA')) stateManager.attemptSteal(0)
-      if (input.isPressed('KeyF')) stateManager.attemptPass(0)
-      if (input.isPressed('KeyC')) stateManager.callForPass(0)
+      input.beginFrame()
+
+      const dx = (input.isPressed('ArrowRight') ? 1 : 0) - (input.isPressed('ArrowLeft') ? 1 : 0)
+      const dz = (input.isPressed('ArrowDown') ? 1 : 0) - (input.isPressed('ArrowUp') ? 1 : 0)
+      if (dx !== 0 || dz !== 0) stateManager.moveHuman(dx, dz)
+
+      if (input.wasJustPressed('Space')) stateManager.jump(0)
+
+      const charging = input.isPressed('KeyS')
+      stateManager.setShotCharge(0, charging)
+      if (wasChargingRef.current && !charging) {
+        stateManager.releaseShoot(0)
+      }
+      wasChargingRef.current = charging
+
+      if (input.wasJustPressed('KeyA')) stateManager.attemptSteal(0)
+      if (input.wasJustPressed('KeyF')) stateManager.attemptPass(0)
+      if (input.wasJustPressed('KeyC')) stateManager.callForPass(0)
 
       stateManager.step()
       setState({ ...stateManager.getState() })
+      input.endFrame()
     })
 
     loop.start()
@@ -54,7 +68,7 @@ export function App() {
           }}
         />
       </section>
-      <div className="help">Controls: S Shot • D Dunk • A Steal • F Pass • C Call for Pass</div>
+      <div className="help">Move: Arrow Keys • Jump: Space • Shoot: Hold+Release S • A Steal • F Pass • C Call for Pass</div>
     </main>
   )
 }

@@ -27,6 +27,9 @@ export interface PlayerState {
   hasBall: boolean
   position: Vec3
   isHuman?: boolean
+  isJumping: boolean
+  jumpVel: number
+  shotChargeTicks: number
 }
 
 export interface ScoreState {

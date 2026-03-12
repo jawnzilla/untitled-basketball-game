@@ -1,6 +1,6 @@
 import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
-import { useMemo, useRef } from 'react'
+import { useMemo } from 'react'
 import * as THREE from 'three'
 import type { GameState } from '../core/types'
 
@@ -18,9 +18,9 @@ function CameraFollower({ target }: { target: [number, number, number] }) {
   return null
 }
 
-function PlayerMarker({ x, z, team }: { x: number; z: number; team: 0 | 1 }) {
+function PlayerMarker({ x, y, z, team }: { x: number; y: number; z: number; team: 0 | 1 }) {
   return (
-    <mesh position={[x, 0.4, z]}>
+    <mesh position={[x, 0.4 + y, z]}>
       <capsuleGeometry args={[0.16, 0.5, 6, 10]} />
       <meshStandardMaterial color={team === 0 ? '#1d4ed8' : '#dc2626'} />
     </mesh>
@@ -28,10 +28,9 @@ function PlayerMarker({ x, z, team }: { x: number; z: number; team: 0 | 1 }) {
 }
 
 function Hoop({ x, z }: { x: number; z: number }) {
-  const postRef = useRef<THREE.Mesh>(null)
   return (
     <group position={[x, 0, z]}>
-      <mesh ref={postRef} position={[0, 1.8, 0]}>
+      <mesh position={[0, 1.8, 0]}>
         <cylinderGeometry args={[0.08, 0.08, 3.6, 10]} />
         <meshStandardMaterial color="#e5e7eb" />
       </mesh>
@@ -56,24 +55,21 @@ export function UBGPrototypeScene({ state }: Props) {
       <ambientLight intensity={0.65} />
       <directionalLight position={[9, 13, 4]} intensity={1.2} />
 
-      {/* Subset-court framing: wider in X, shorter in Z */}
       <mesh rotation-x={-Math.PI / 2} receiveShadow>
         <planeGeometry args={[18, 10]} />
         <meshStandardMaterial color="#256c39" />
       </mesh>
 
-      {/* Mid marker */}
       <mesh position={[0, 0.02, 0]}>
         <circleGeometry args={[0.9, 32]} />
         <meshStandardMaterial color="#f8fafc" />
       </mesh>
 
-      {/* Hoops on left/right for correct orientation */}
       <Hoop x={-7.2} z={0} />
       <Hoop x={7.2} z={0} />
 
       {players.map((p) => (
-        <PlayerMarker key={p.id} x={p.position.x} z={p.position.z} team={p.team} />
+        <PlayerMarker key={p.id} x={p.position.x} y={p.position.y} z={p.position.z} team={p.team} />
       ))}
 
       <mesh position={[ball.position.x, ball.position.y, ball.position.z]} castShadow>
@@ -82,8 +78,6 @@ export function UBGPrototypeScene({ state }: Props) {
       </mesh>
 
       <CameraFollower target={[ball.position.x, ball.position.y, ball.position.z]} />
-
-      {/* keep controls for debugging but no pan */}
       <OrbitControls enablePan={false} maxPolarAngle={Math.PI / 2.05} minDistance={6} maxDistance={14} />
     </Canvas>
   )
