@@ -91,6 +91,14 @@ body,
   font-size: 0.92rem;
 }
 
+.ruleToggle {
+  margin-top: 0.9rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  font-size: 0.92rem;
+}
+
 .help {
   padding: 0.7rem 1rem;
   background: #0f172a;

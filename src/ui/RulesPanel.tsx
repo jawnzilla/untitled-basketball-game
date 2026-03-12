@@ -4,13 +4,10 @@ type Props = {
   state: Readonly<GameState>
   onPreset: (preset: 'classic' | 'competitive' | 'custom') => void
   onTune: (key: keyof GameState['rules']['tuning'], value: number) => void
+  onAutoMakeShots: (enabled: boolean) => void
 }
 
-const slider = (
-  label: string,
-  value: number,
-  onChange: (v: number) => void
-) => (
+const slider = (label: string, value: number, onChange: (v: number) => void) => (
   <label className="ruleRow">
     <span>{label}</span>
     <input type="range" min={0} max={1} step={0.01} value={value} onChange={(e) => onChange(Number(e.target.value))} />
@@ -18,8 +15,8 @@ const slider = (
   </label>
 )
 
-export function RulesPanel({ state, onPreset, onTune }: Props) {
-  const { preset, tuning } = state.rules
+export function RulesPanel({ state, onPreset, onTune, onAutoMakeShots }: Props) {
+  const { preset, tuning, autoMakeShots } = state.rules
 
   return (
     <aside className="rulesPanel">
@@ -35,6 +32,11 @@ export function RulesPanel({ state, onPreset, onTune }: Props) {
       {slider('Steal Window', tuning.stealWindow, (v) => onTune('stealWindow', v))}
       {slider('On Fire Boost', tuning.onFireBoost, (v) => onTune('onFireBoost', v))}
       {slider('Shot Variance', tuning.shotVariance, (v) => onTune('shotVariance', v))}
+
+      <label className="ruleToggle">
+        <input type="checkbox" checked={autoMakeShots} onChange={(e) => onAutoMakeShots(e.target.checked)} />
+        <span>Auto-Make Shots (testing)</span>
+      </label>
     </aside>
   )
 }

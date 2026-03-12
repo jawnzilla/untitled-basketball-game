@@ -66,6 +66,10 @@ export function App() {
             stateManager.setTuningValue(key, value)
             setState({ ...stateManager.getState() })
           }}
+          onAutoMakeShots={(enabled) => {
+            stateManager.setAutoMakeShots(enabled)
+            setState({ ...stateManager.getState() })
+          }}
         />
       </section>
       <div className="help">Move: Arrow Keys • Jump: Space • Shoot: Hold+Release S • A Steal • F Pass • C Call for Pass</div>

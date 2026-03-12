@@ -39,7 +39,8 @@
   - basic drone decision loop (shoot/dunk/pass)
   - leading pass trajectory with interception window checks
 - Updated gameplay camera and court orientation:
-  - camera tracks ball and frames a tighter gameplay subset
+  - fixed-angle broadcast camera behind bottom sideline
+  - camera tracks ball laterally and pushes in/out by depth (no tilt wobble)
   - hoop orientation switched to left/right court ends
 - Added keyboard gameplay controls:
   - `Arrow Keys` = Move
@@ -59,3 +60,5 @@ npm run dev
 - Added player movement and jump physics for the human-controlled player.
 - Fixed possession bug: shots and dunks now require ball possession; missed shots no longer auto-return possession on key press.
 - Added shot hold/release timing mechanic tied to jump context and contest penalties.
+- Added debug toggle: **Auto-Make Shots** for rapid gameplay testing.
+- Increased shot arc/velocity scaling so long shots are no longer consistently short.

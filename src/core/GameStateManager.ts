@@ -24,7 +24,7 @@ export class GameStateManager {
       inboundTeam: null,
       inboundCooldownTicks: 0,
       lastPlay: { event: 'none', quality: 0 },
-      rules: { preset: 'classic', tuning: { ...PRESETS.classic } },
+      rules: { preset: 'classic', tuning: { ...PRESETS.classic }, autoMakeShots: false },
       flow: { passOff: 0, stealsOff: 0 },
       players: [
         { id: 0, team: 0, shotSkill: 7, dunkSkill: 8, stealSkill: 6, onFire: false, hasBall: true, position: { x: 3.2, y: 0, z: -0.8 }, isHuman: true, isJumping: false, jumpVel: 0, shotChargeTicks: 0 },
@@ -55,6 +55,10 @@ export class GameStateManager {
   public setTuningValue(key: keyof GameState['rules']['tuning'], value: number): void {
     this.state.rules.preset = 'custom'
     this.state.rules.tuning[key] = clamp(value, 0, 1)
+  }
+
+  public setAutoMakeShots(enabled: boolean): void {
+    this.state.rules.autoMakeShots = enabled
   }
 
   public moveHuman(dx: number, dz: number): void {
@@ -158,7 +162,7 @@ export class GameStateManager {
     })
 
     const adjustedQuality = clamp(decision.quality * timingQuality - contestPenalty, 0.03, 0.98)
-    const made = Math.random() < adjustedQuality
+    const made = this.state.rules.autoMakeShots ? true : Math.random() < adjustedQuality
 
     this.launchBallAt(hoop, shooter.position, decision.targetOffset, made)
     shooter.hasBall = false
@@ -188,7 +192,7 @@ export class GameStateManager {
       tuning: this.state.rules.tuning
     })
 
-    const made = decision.isDunk
+    const made = this.state.rules.autoMakeShots ? true : decision.isDunk
     this.launchBallAt(hoop, attacker.position, { x: 0, y: 0, z: 0 }, made)
     attacker.hasBall = false
     this.state.lastPlay = { event: made ? 'dunk_made' : 'dunk_fail', quality: decision.chance }
@@ -374,10 +378,15 @@ export class GameStateManager {
     this.state.ball.passTargetPlayerId = null
     this.state.ball.position = { x: from.x, y: 1.05, z: from.z }
     this.state.ball.target = finalTarget
+    const distance = Math.hypot(dx, dz)
+    const lateralScale = 0.038
+    const arcBase = 0.29
+    const arcByDistance = clamp(distance * 0.01, 0, 0.12)
+
     this.state.ball.velocity = {
-      x: clamp(dx * 0.03, -0.2, 0.2),
-      y: made ? 0.28 : 0.24,
-      z: clamp(dz * 0.03, -0.2, 0.2)
+      x: clamp(dx * lateralScale, -0.34, 0.34),
+      y: arcBase + arcByDistance + (made ? 0.02 : -0.01),
+      z: clamp(dz * lateralScale, -0.34, 0.34)
     }
   }
 

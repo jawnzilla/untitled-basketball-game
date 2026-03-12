@@ -10,26 +10,29 @@ interface Props {
 function BroadcastCameraFollower({ target }: { target: [number, number, number] }) {
   const desired = useMemo(() => new THREE.Vector3(), [])
 
-  // Fixed broadcast profile:
-  // - camera stays behind bottom sideline (positive Z side)
-  // - fixed tilt/height feel
-  // - tracks ball mainly in X while preserving a stable presentation angle
   useFrame(({ camera }) => {
-    const [tx, ty, tz] = target
+    const [tx, _ty, tz] = target
 
     const CAMERA_HEIGHT = 5.8
-    const SIDELINE_Z = 5.0
-    const BEHIND_SIDELINE_OFFSET = 3.6
+    const BASE_Z = 8.6
     const TRACK_X_CLAMP = 7.5
 
+    // push in/out with ball depth instead of changing tilt
+    // ball farther upcourt (negative z) => camera pushes in a bit
+    // ball closer to bottom sideline (positive z) => camera pulls out
+    const zoomByDepth = THREE.MathUtils.clamp(tz * 0.55, -2.2, 2.2)
+
     const camX = THREE.MathUtils.clamp(tx, -TRACK_X_CLAMP, TRACK_X_CLAMP)
-    const camZ = SIDELINE_Z + BEHIND_SIDELINE_OFFSET
+    const camZ = BASE_Z + zoomByDepth
 
     desired.set(camX, CAMERA_HEIGHT, camZ)
     camera.position.lerp(desired, 0.09)
 
-    // Keep the same broadcast angle; look at ball with slight forward bias
-    camera.lookAt(tx, Math.max(1.1, ty), tz * 0.92)
+    // fixed broadcast pitch/yaw to prevent tilt wobble
+    camera.rotation.order = 'YXZ'
+    camera.rotation.y = Math.PI
+    camera.rotation.x = -0.47
+    camera.rotation.z = 0
   })
 
   return null

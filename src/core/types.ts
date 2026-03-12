@@ -47,6 +47,7 @@ export interface LastPlayState {
 export interface RulesState {
   preset: PresetId
   tuning: GameplayTuning
+  autoMakeShots: boolean
 }
 
 export interface FlowTimers {
