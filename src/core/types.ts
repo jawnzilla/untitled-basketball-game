@@ -10,6 +10,7 @@ export interface BallState {
   position: Vec3
   velocity: Vec3
   inAir: boolean
+  target: Vec3 | null
 }
 
 export interface PlayerState {
@@ -20,6 +21,7 @@ export interface PlayerState {
   stealSkill: number
   onFire: boolean
   hasBall: boolean
+  position: Vec3
 }
 
 export interface ScoreState {
@@ -29,10 +31,17 @@ export interface ScoreState {
   gameClockTicks: number
 }
 
+export interface LastPlayState {
+  event: 'none' | 'shot_made' | 'shot_miss' | 'dunk_made' | 'dunk_fail' | 'inbound'
+  quality: number
+}
+
 export interface GameState {
   tick: number
   score: ScoreState
   inboundTeam: TeamId | null
+  inboundCooldownTicks: number
   players: PlayerState[]
   ball: BallState
+  lastPlay: LastPlayState
 }

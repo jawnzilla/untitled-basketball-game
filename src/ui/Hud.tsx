@@ -7,14 +7,28 @@ const formatClock = (ticks: number) => {
   return `${minutes}:${seconds.toString().padStart(2, '0')}`
 }
 
+const eventText: Record<GameState['lastPlay']['event'], string> = {
+  none: 'No event',
+  shot_made: 'Shot made',
+  shot_miss: 'Shot missed',
+  dunk_made: 'Dunk made',
+  dunk_fail: 'Dunk failed',
+  inbound: 'Inbound sequence'
+}
+
 export function Hud({ state }: { state: Readonly<GameState> }) {
   return (
     <div className="hud">
       <div>Q{state.score.quarter}</div>
-      <div>{state.score.team0} - {state.score.team1}</div>
+      <div>
+        {state.score.team0} - {state.score.team1}
+      </div>
       <div>{formatClock(state.score.gameClockTicks)}</div>
       <div>Tick {state.tick}</div>
-      <div>{state.inboundTeam === null ? 'Live Ball' : `Inbound: Team ${state.inboundTeam + 1}`}</div>
+      <div>{state.inboundTeam === null ? 'Live Ball' : `Inbound: Team ${state.inboundTeam + 1} (${state.inboundCooldownTicks})`}</div>
+      <div>
+        {eventText[state.lastPlay.event]} ({Math.round(state.lastPlay.quality * 100)}%)
+      </div>
     </div>
   )
 }

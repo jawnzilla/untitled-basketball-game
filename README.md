@@ -24,7 +24,14 @@
   - `GameLoop` (fixed-step 60hz simulation loop)
   - `GameStateManager` (authoritative game state + ball integration)
   - `InputController` (keyboard input layer)
-- Added playable prototype scene with HUD and test shot arc (`Space` key).
+- Added playable prototype scene with HUD and gameplay decision hooks.
+- Implemented first-pass gameplay pipeline:
+  - Shot success evaluation (`evaluateShot`)
+  - Dunk decision evaluation (`evaluateDunk`)
+  - Inbound transition state machine (`startInbound` / `stepInbound`)
+- Added keyboard gameplay controls:
+  - `S` = Shot attempt
+  - `D` = Dunk attempt
 
 ## 🚀 Run Local
 ```bash

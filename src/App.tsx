@@ -16,8 +16,12 @@ export function App() {
     input.attach()
 
     const loop = new GameLoop(() => {
-      if (input.isPressed('Space')) {
-        stateManager.testShot()
+      if (input.isPressed('KeyS')) {
+        stateManager.attemptShot(0)
+      }
+
+      if (input.isPressed('KeyD')) {
+        stateManager.attemptDunk(0)
       }
 
       stateManager.step()
@@ -38,7 +42,7 @@ export function App() {
       <div className="viewport">
         <UBGPrototypeScene state={state} />
       </div>
-      <div className="help">Press Space to launch test shot arc.</div>
+      <div className="help">Controls: S = Shot attempt, D = Dunk attempt.</div>
     </main>
   )
 }
