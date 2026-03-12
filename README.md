@@ -32,9 +32,17 @@
 - Added **Gameplay Profile System** with presets and live tuning sliders:
   - Presets: `Classic`, `Competitive`, `Custom`
   - Sliders: CPU Assist/Rubberband, Dunk Frequency, Steal Window, On Fire Boost, Shot Variance
+- Added gameplay flow controls from original design patterns:
+  - `pass_off` lockout timer (anti-pass-spam)
+  - `steals_off` lockout timer (anti-steal-spam)
+  - call-for-pass behavior (`C`) for teammate pass requests
+  - basic drone decision loop (shoot/dunk/pass)
 - Added keyboard gameplay controls:
   - `S` = Shot attempt
   - `D` = Dunk attempt
+  - `A` = Steal attempt
+  - `F` = Pass attempt
+  - `C` = Call for pass
 
 ## 🚀 Run Local
 ```bash

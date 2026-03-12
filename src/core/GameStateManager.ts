@@ -31,8 +31,12 @@ export class GameStateManager {
         preset: 'classic',
         tuning: { ...PRESETS.classic }
       },
+      flow: {
+        passOff: 0,
+        stealsOff: 0
+      },
       players: [
-        { id: 0, team: 0, shotSkill: 7, dunkSkill: 8, stealSkill: 6, onFire: false, hasBall: true, position: { x: -1.2, y: 0, z: 4.2 } },
+        { id: 0, team: 0, shotSkill: 7, dunkSkill: 8, stealSkill: 6, onFire: false, hasBall: true, position: { x: -1.2, y: 0, z: 4.2 }, isHuman: true },
         { id: 1, team: 0, shotSkill: 6, dunkSkill: 9, stealSkill: 5, onFire: false, hasBall: false, position: { x: 1.2, y: 0, z: 3.4 } },
         { id: 2, team: 1, shotSkill: 8, dunkSkill: 6, stealSkill: 8, onFire: false, hasBall: false, position: { x: -1.4, y: 0, z: -3.8 } },
         { id: 3, team: 1, shotSkill: 5, dunkSkill: 7, stealSkill: 7, onFire: false, hasBall: false, position: { x: 1.3, y: 0, z: -4.2 } }
@@ -67,11 +71,15 @@ export class GameStateManager {
       this.state.score.gameClockTicks -= 1
     }
 
+    this.state.flow.passOff = Math.max(0, this.state.flow.passOff - 1)
+    this.state.flow.stealsOff = Math.max(0, this.state.flow.stealsOff - 1)
+
     const inbound = stepInbound({ inboundTeam: this.state.inboundTeam, cooldownTicks: this.state.inboundCooldownTicks })
     this.state.inboundTeam = inbound.inboundTeam
     this.state.inboundCooldownTicks = inbound.cooldownTicks
 
     this.integrateBall()
+    this.stepDroneAI()
   }
 
   public attemptShot(playerId = 0): void {
@@ -127,6 +135,93 @@ export class GameStateManager {
     }
   }
 
+  public attemptPass(playerId = 0): void {
+    if (this.state.flow.passOff > 0 || this.state.inboundTeam !== null) return
+    const passer = this.state.players[playerId]
+    if (!passer.hasBall) return
+
+    const teammate = this.state.players.find((p) => p.team === passer.team && p.id !== passer.id)
+    if (!teammate) return
+
+    passer.hasBall = false
+    teammate.hasBall = true
+    this.state.ball.position = { x: teammate.position.x, y: 1.05, z: teammate.position.z }
+    this.state.ball.inAir = false
+    this.state.flow.passOff = 12
+    this.state.lastPlay = { event: 'pass', quality: 1 }
+  }
+
+  public attemptSteal(playerId = 0): void {
+    if (this.state.flow.stealsOff > 0 || this.state.inboundTeam !== null) return
+    const defender = this.state.players[playerId]
+
+    const ballHandler = this.state.players.find((p) => p.hasBall && p.team !== defender.team)
+    if (!ballHandler) return
+
+    const distance = Math.hypot(defender.position.x - ballHandler.position.x, defender.position.z - ballHandler.position.z)
+    if (distance > 1.5) return
+
+    const stealFactor = clamp(defender.stealSkill / 10, 0, 1)
+    const windowBoost = this.state.rules.tuning.stealWindow * 0.25
+    const chance = clamp(0.18 + stealFactor * 0.45 + windowBoost, 0.05, 0.92)
+
+    if (Math.random() < chance) {
+      ballHandler.hasBall = false
+      defender.hasBall = true
+      this.state.ball.position = { x: defender.position.x, y: 1.05, z: defender.position.z }
+      this.state.lastPlay = { event: 'steal', quality: chance }
+    }
+
+    this.state.flow.stealsOff = 30
+  }
+
+  public callForPass(callerId = 0): void {
+    const caller = this.state.players[callerId]
+    if (!caller) return
+
+    const teammate = this.state.players.find((p) => p.team === caller.team && p.id !== caller.id)
+    if (!teammate || !teammate.hasBall) return
+
+    this.state.lastPlay = { event: 'call_for_pass', quality: 1 }
+
+    if (this.state.flow.passOff <= 0) {
+      teammate.hasBall = false
+      caller.hasBall = true
+      this.state.ball.position = { x: caller.position.x, y: 1.05, z: caller.position.z }
+      this.state.flow.passOff = 10
+    }
+  }
+
+  private stepDroneAI(): void {
+    if (this.state.tick % 24 !== 0) return
+
+    // minimal decision loop for now
+    const droneBallHandler = this.state.players.find((p) => !p.isHuman && p.hasBall)
+    if (!droneBallHandler || this.state.inboundTeam !== null || this.state.ball.inAir) return
+
+    const hoop = droneBallHandler.team === 0 ? TEAM0_HOOP : TEAM1_HOOP
+    const dist = Math.hypot(droneBallHandler.position.x - hoop.x, droneBallHandler.position.z - hoop.z)
+
+    if (dist < 2.1 && Math.random() < 0.45) {
+      this.attemptDunk(droneBallHandler.id)
+      return
+    }
+
+    if (Math.random() < 0.55) {
+      this.attemptShot(droneBallHandler.id)
+      return
+    }
+
+    const teammate = this.state.players.find((p) => p.team === droneBallHandler.team && p.id !== droneBallHandler.id)
+    if (teammate && this.state.flow.passOff <= 0) {
+      droneBallHandler.hasBall = false
+      teammate.hasBall = true
+      this.state.ball.position = { x: teammate.position.x, y: 1.05, z: teammate.position.z }
+      this.state.flow.passOff = 12
+      this.state.lastPlay = { event: 'pass', quality: 0.8 }
+    }
+  }
+
   private integrateBall(): void {
     const { ball } = this.state
     if (!ball.inAir) return
@@ -169,6 +264,8 @@ export class GameStateManager {
     this.state.inboundTeam = inbound.inboundTeam
     this.state.inboundCooldownTicks = inbound.cooldownTicks
     this.state.lastPlay.event = 'inbound'
+    this.state.flow.stealsOff = 20
+    this.state.flow.passOff = 8
   }
 
   private addScore(team: TeamId, points: number): void {

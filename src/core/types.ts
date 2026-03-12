@@ -24,6 +24,7 @@ export interface PlayerState {
   onFire: boolean
   hasBall: boolean
   position: Vec3
+  isHuman?: boolean
 }
 
 export interface ScoreState {
@@ -34,13 +35,18 @@ export interface ScoreState {
 }
 
 export interface LastPlayState {
-  event: 'none' | 'shot_made' | 'shot_miss' | 'dunk_made' | 'dunk_fail' | 'inbound'
+  event: 'none' | 'shot_made' | 'shot_miss' | 'dunk_made' | 'dunk_fail' | 'inbound' | 'steal' | 'pass' | 'call_for_pass'
   quality: number
 }
 
 export interface RulesState {
   preset: PresetId
   tuning: GameplayTuning
+}
+
+export interface FlowTimers {
+  passOff: number
+  stealsOff: number
 }
 
 export interface GameState {
@@ -52,4 +58,5 @@ export interface GameState {
   ball: BallState
   lastPlay: LastPlayState
   rules: RulesState
+  flow: FlowTimers
 }

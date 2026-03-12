@@ -19,6 +19,9 @@ export function App() {
     const loop = new GameLoop(() => {
       if (input.isPressed('KeyS')) stateManager.attemptShot(0)
       if (input.isPressed('KeyD')) stateManager.attemptDunk(0)
+      if (input.isPressed('KeyA')) stateManager.attemptSteal(0)
+      if (input.isPressed('KeyF')) stateManager.attemptPass(0)
+      if (input.isPressed('KeyC')) stateManager.callForPass(0)
 
       stateManager.step()
       setState({ ...stateManager.getState() })
@@ -51,7 +54,7 @@ export function App() {
           }}
         />
       </section>
-      <div className="help">Controls: S = Shot attempt, D = Dunk attempt.</div>
+      <div className="help">Controls: S Shot • D Dunk • A Steal • F Pass • C Call for Pass</div>
     </main>
   )
 }

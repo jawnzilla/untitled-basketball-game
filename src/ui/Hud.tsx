@@ -13,7 +13,10 @@ const eventText: Record<GameState['lastPlay']['event'], string> = {
   shot_miss: 'Shot missed',
   dunk_made: 'Dunk made',
   dunk_fail: 'Dunk failed',
-  inbound: 'Inbound sequence'
+  inbound: 'Inbound sequence',
+  steal: 'Steal',
+  pass: 'Pass',
+  call_for_pass: 'Call for pass'
 }
 
 export function Hud({ state }: { state: Readonly<GameState> }) {
@@ -26,9 +29,9 @@ export function Hud({ state }: { state: Readonly<GameState> }) {
       <div>{formatClock(state.score.gameClockTicks)}</div>
       <div>Tick {state.tick}</div>
       <div>{state.inboundTeam === null ? 'Live Ball' : `Inbound: Team ${state.inboundTeam + 1} (${state.inboundCooldownTicks})`}</div>
-      <div>
-        {eventText[state.lastPlay.event]} ({Math.round(state.lastPlay.quality * 100)}%)
-      </div>
+      <div>{eventText[state.lastPlay.event]} ({Math.round(state.lastPlay.quality * 100)}%)</div>
+      <div>pass_off: {state.flow.passOff}</div>
+      <div>steals_off: {state.flow.stealsOff}</div>
     </div>
   )
 }
