@@ -1,3 +1,5 @@
+import type { GameplayTuning, PresetId } from '../game/tuning'
+
 export type TeamId = 0 | 1
 
 export interface Vec3 {
@@ -36,6 +38,11 @@ export interface LastPlayState {
   quality: number
 }
 
+export interface RulesState {
+  preset: PresetId
+  tuning: GameplayTuning
+}
+
 export interface GameState {
   tick: number
   score: ScoreState
@@ -44,4 +51,5 @@ export interface GameState {
   players: PlayerState[]
   ball: BallState
   lastPlay: LastPlayState
+  rules: RulesState
 }

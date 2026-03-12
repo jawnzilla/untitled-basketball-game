@@ -29,6 +29,9 @@
   - Shot success evaluation (`evaluateShot`)
   - Dunk decision evaluation (`evaluateDunk`)
   - Inbound transition state machine (`startInbound` / `stepInbound`)
+- Added **Gameplay Profile System** with presets and live tuning sliders:
+  - Presets: `Classic`, `Competitive`, `Custom`
+  - Sliders: CPU Assist/Rubberband, Dunk Frequency, Steal Window, On Fire Boost, Shot Variance
 - Added keyboard gameplay controls:
   - `S` = Shot attempt
   - `D` = Dunk attempt

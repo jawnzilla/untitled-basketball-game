@@ -24,8 +24,15 @@ body,
   grid-template-rows: auto 1fr auto;
 }
 
+.content {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  min-height: 0;
+}
+
 .hud {
   display: flex;
+  flex-wrap: wrap;
   gap: 1rem;
   padding: 0.8rem 1rem;
   background: #0f172a;
@@ -36,6 +43,52 @@ body,
 .viewport {
   width: 100%;
   height: 100%;
+  min-height: 520px;
+}
+
+.rulesPanel {
+  border-left: 1px solid #1e293b;
+  background: #0b1220;
+  padding: 0.9rem;
+  overflow: auto;
+}
+
+.rulesPanel h3 {
+  margin-top: 0.2rem;
+}
+
+.presetRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.4rem;
+  margin-bottom: 0.8rem;
+}
+
+.presetRow button,
+.ruleRow input {
+  cursor: pointer;
+}
+
+.presetRow button {
+  background: #1e293b;
+  color: #e2e8f0;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  padding: 0.35rem 0.5rem;
+}
+
+.presetRow button.active {
+  background: #0369a1;
+  border-color: #0284c7;
+}
+
+.ruleRow {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr auto;
+  gap: 0.6rem;
+  align-items: center;
+  margin: 0.5rem 0;
+  font-size: 0.92rem;
 }
 
 .help {

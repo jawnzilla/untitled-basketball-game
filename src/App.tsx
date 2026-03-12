@@ -5,6 +5,7 @@ import { InputController } from './core/InputController'
 import type { GameState } from './core/types'
 import { UBGPrototypeScene } from './game/UBGPrototypeScene'
 import { Hud } from './ui/Hud'
+import { RulesPanel } from './ui/RulesPanel'
 
 export function App() {
   const stateManager = useMemo(() => new GameStateManager(), [])
@@ -16,13 +17,8 @@ export function App() {
     input.attach()
 
     const loop = new GameLoop(() => {
-      if (input.isPressed('KeyS')) {
-        stateManager.attemptShot(0)
-      }
-
-      if (input.isPressed('KeyD')) {
-        stateManager.attemptDunk(0)
-      }
+      if (input.isPressed('KeyS')) stateManager.attemptShot(0)
+      if (input.isPressed('KeyD')) stateManager.attemptDunk(0)
 
       stateManager.step()
       setState({ ...stateManager.getState() })
@@ -39,9 +35,22 @@ export function App() {
   return (
     <main className="app">
       <Hud state={state} />
-      <div className="viewport">
-        <UBGPrototypeScene state={state} />
-      </div>
+      <section className="content">
+        <div className="viewport">
+          <UBGPrototypeScene state={state} />
+        </div>
+        <RulesPanel
+          state={state}
+          onPreset={(preset) => {
+            stateManager.setPreset(preset)
+            setState({ ...stateManager.getState() })
+          }}
+          onTune={(key, value) => {
+            stateManager.setTuningValue(key, value)
+            setState({ ...stateManager.getState() })
+          }}
+        />
+      </section>
       <div className="help">Controls: S = Shot attempt, D = Dunk attempt.</div>
     </main>
   )

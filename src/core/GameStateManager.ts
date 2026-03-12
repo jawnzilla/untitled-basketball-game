@@ -1,4 +1,5 @@
 import { evaluateDunk, evaluateShot, startInbound, stepInbound } from '../game/mechanics'
+import { PRESETS } from '../game/tuning'
 import type { GameState, TeamId, Vec3 } from './types'
 
 const TICKS_PER_SECOND = 60
@@ -26,47 +27,15 @@ export class GameStateManager {
         event: 'none',
         quality: 0
       },
+      rules: {
+        preset: 'classic',
+        tuning: { ...PRESETS.classic }
+      },
       players: [
-        {
-          id: 0,
-          team: 0,
-          shotSkill: 7,
-          dunkSkill: 8,
-          stealSkill: 6,
-          onFire: false,
-          hasBall: true,
-          position: { x: -1.2, y: 0, z: 4.2 }
-        },
-        {
-          id: 1,
-          team: 0,
-          shotSkill: 6,
-          dunkSkill: 9,
-          stealSkill: 5,
-          onFire: false,
-          hasBall: false,
-          position: { x: 1.2, y: 0, z: 3.4 }
-        },
-        {
-          id: 2,
-          team: 1,
-          shotSkill: 8,
-          dunkSkill: 6,
-          stealSkill: 8,
-          onFire: false,
-          hasBall: false,
-          position: { x: -1.4, y: 0, z: -3.8 }
-        },
-        {
-          id: 3,
-          team: 1,
-          shotSkill: 5,
-          dunkSkill: 7,
-          stealSkill: 7,
-          onFire: false,
-          hasBall: false,
-          position: { x: 1.3, y: 0, z: -4.2 }
-        }
+        { id: 0, team: 0, shotSkill: 7, dunkSkill: 8, stealSkill: 6, onFire: false, hasBall: true, position: { x: -1.2, y: 0, z: 4.2 } },
+        { id: 1, team: 0, shotSkill: 6, dunkSkill: 9, stealSkill: 5, onFire: false, hasBall: false, position: { x: 1.2, y: 0, z: 3.4 } },
+        { id: 2, team: 1, shotSkill: 8, dunkSkill: 6, stealSkill: 8, onFire: false, hasBall: false, position: { x: -1.4, y: 0, z: -3.8 } },
+        { id: 3, team: 1, shotSkill: 5, dunkSkill: 7, stealSkill: 7, onFire: false, hasBall: false, position: { x: 1.3, y: 0, z: -4.2 } }
       ],
       ball: {
         position: { x: -1.2, y: 1.05, z: 4.2 },
@@ -81,6 +50,16 @@ export class GameStateManager {
     return this.state
   }
 
+  public setPreset(preset: 'classic' | 'competitive' | 'custom'): void {
+    this.state.rules.preset = preset
+    this.state.rules.tuning = { ...PRESETS[preset] }
+  }
+
+  public setTuningValue(key: keyof GameState['rules']['tuning'], value: number): void {
+    this.state.rules.preset = 'custom'
+    this.state.rules.tuning[key] = clamp(value, 0, 1)
+  }
+
   public step(): void {
     this.state.tick += 1
 
@@ -88,10 +67,7 @@ export class GameStateManager {
       this.state.score.gameClockTicks -= 1
     }
 
-    const inbound = stepInbound({
-      inboundTeam: this.state.inboundTeam,
-      cooldownTicks: this.state.inboundCooldownTicks
-    })
+    const inbound = stepInbound({ inboundTeam: this.state.inboundTeam, cooldownTicks: this.state.inboundCooldownTicks })
     this.state.inboundTeam = inbound.inboundTeam
     this.state.inboundCooldownTicks = inbound.cooldownTicks
 
@@ -111,7 +87,8 @@ export class GameStateManager {
       shooterPos: shooter.position,
       isThreePoint,
       defendersNearby: this.countDefendersNear(shooter.team, shooter.position, 2.2),
-      isOnFire: shooter.onFire
+      isOnFire: shooter.onFire,
+      tuning: this.state.rules.tuning
     })
 
     this.launchBallAt(hoop, shooter.position, decision.targetOffset, decision.made)
@@ -136,7 +113,8 @@ export class GameStateManager {
       hoop,
       defendersInPaint: this.countDefendersNear(attacker.team, hoop, 2),
       gameClockTicks: this.state.score.gameClockTicks,
-      trailingBy: this.teamScore(attacker.team) - this.teamScore(this.opponentTeam(attacker.team))
+      trailingBy: this.teamScore(attacker.team) - this.teamScore(this.opponentTeam(attacker.team)),
+      tuning: this.state.rules.tuning
     })
 
     const made = decision.isDunk
@@ -171,11 +149,7 @@ export class GameStateManager {
   }
 
   private launchBallAt(target: Vec3, from: Vec3, offset: Vec3, made: boolean): void {
-    const finalTarget = {
-      x: target.x + offset.x,
-      y: target.y + (made ? 0.15 : 0.1),
-      z: target.z + offset.z
-    }
+    const finalTarget = { x: target.x + offset.x, y: target.y + (made ? 0.15 : 0.1), z: target.z + offset.z }
 
     const dx = finalTarget.x - from.x
     const dz = finalTarget.z - from.z
@@ -211,10 +185,6 @@ export class GameStateManager {
   }
 
   private countDefendersNear(offenseTeam: TeamId, origin: Vec3, radius: number): number {
-    return this.state.players.filter((p) => {
-      if (p.team === offenseTeam) return false
-      const d = Math.hypot(p.position.x - origin.x, p.position.z - origin.z)
-      return d <= radius
-    }).length
+    return this.state.players.filter((p) => p.team !== offenseTeam && Math.hypot(p.position.x - origin.x, p.position.z - origin.z) <= radius).length
   }
 }
