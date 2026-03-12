@@ -17,8 +17,6 @@ function BroadcastCameraFollower({ target }: { target: [number, number, number] 
     const TRACK_X_CLAMP = 7.2
     const BASE_Y = 7.2
     const BASE_Z = 11.2
-
-    // push in/out on depth only (no tilt change)
     const depthZoom = THREE.MathUtils.clamp(tz * 0.5, -2.4, 2.4)
 
     const camX = THREE.MathUtils.clamp(tx, -TRACK_X_CLAMP, TRACK_X_CLAMP)
@@ -28,7 +26,6 @@ function BroadcastCameraFollower({ target }: { target: [number, number, number] 
     desired.set(camX, camY, camZ)
     camera.position.lerp(desired, 0.1)
 
-    // stable broadcast angle target; small depth influence to keep play centered
     look.set(camX, 0.9, tz * 0.25)
     camera.lookAt(look)
   })
@@ -67,6 +64,8 @@ function Hoop({ x, z }: { x: number; z: number }) {
 export function UBGPrototypeScene({ state }: Props) {
   const { ball, players } = state
 
+  const ballY = Number.isFinite(ball.position.y) ? Math.max(0.28, ball.position.y) : 1.2
+
   return (
     <Canvas camera={{ position: [0, 7.2, 11.2], fov: 47 }}>
       <color attach="background" args={['#0f172a']} />
@@ -90,12 +89,17 @@ export function UBGPrototypeScene({ state }: Props) {
         <PlayerMarker key={p.id} x={p.position.x} y={p.position.y} z={p.position.z} team={p.team} />
       ))}
 
-      <mesh position={[ball.position.x, ball.position.y, ball.position.z]} castShadow>
-        <sphereGeometry args={[0.25, 24, 24]} />
-        <meshStandardMaterial color="#cc5a1e" />
+      {/* high-visibility ball + ring indicator so it can never disappear visually */}
+      <mesh position={[ball.position.x, ballY, ball.position.z]} castShadow>
+        <sphereGeometry args={[0.32, 24, 24]} />
+        <meshStandardMaterial color="#ff7a1a" emissive="#8a2a00" emissiveIntensity={0.45} />
+      </mesh>
+      <mesh position={[ball.position.x, 0.03, ball.position.z]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.22, 0.34, 24]} />
+        <meshBasicMaterial color="#f8fafc" transparent opacity={0.85} />
       </mesh>
 
-      <BroadcastCameraFollower target={[ball.position.x, ball.position.y, ball.position.z]} />
+      <BroadcastCameraFollower target={[ball.position.x, ballY, ball.position.z]} />
     </Canvas>
   )
 }

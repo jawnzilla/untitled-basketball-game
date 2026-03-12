@@ -122,6 +122,7 @@ export class GameStateManager {
     this.stepJumping()
     this.integrateBall()
     this.resolveLooseBallPickup()
+    this.anchorBallToCarrier()
     this.stepDroneAI()
   }
 
@@ -366,6 +367,13 @@ export class GameStateManager {
       this.state.players.forEach((p) => (p.hasBall = p.id === nearest.p.id))
       this.state.ball.position = { x: nearest.p.position.x, y: 1.05 + nearest.p.position.y, z: nearest.p.position.z }
     }
+  }
+
+  private anchorBallToCarrier(): void {
+    if (this.state.ball.inAir) return
+    const carrier = this.state.players.find((p) => p.hasBall)
+    if (!carrier) return
+    this.state.ball.position = { x: carrier.position.x, y: 1.05 + carrier.position.y, z: carrier.position.z }
   }
 
   private launchBallAt(target: Vec3, from: Vec3, offset: Vec3, made: boolean): void {
