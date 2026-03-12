@@ -4,8 +4,8 @@ import type { GameState, TeamId, Vec3 } from './types'
 
 const TICKS_PER_SECOND = 60
 
-const TEAM0_HOOP: Vec3 = { x: 0, y: 3.05, z: -5.8 }
-const TEAM1_HOOP: Vec3 = { x: 0, y: 3.05, z: 5.8 }
+const TEAM0_HOOP: Vec3 = { x: -7.2, y: 3.05, z: 0 }
+const TEAM1_HOOP: Vec3 = { x: 7.2, y: 3.05, z: 0 }
 
 const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n))
 
@@ -36,16 +36,18 @@ export class GameStateManager {
         stealsOff: 0
       },
       players: [
-        { id: 0, team: 0, shotSkill: 7, dunkSkill: 8, stealSkill: 6, onFire: false, hasBall: true, position: { x: -1.2, y: 0, z: 4.2 }, isHuman: true },
-        { id: 1, team: 0, shotSkill: 6, dunkSkill: 9, stealSkill: 5, onFire: false, hasBall: false, position: { x: 1.2, y: 0, z: 3.4 } },
-        { id: 2, team: 1, shotSkill: 8, dunkSkill: 6, stealSkill: 8, onFire: false, hasBall: false, position: { x: -1.4, y: 0, z: -3.8 } },
-        { id: 3, team: 1, shotSkill: 5, dunkSkill: 7, stealSkill: 7, onFire: false, hasBall: false, position: { x: 1.3, y: 0, z: -4.2 } }
+        { id: 0, team: 0, shotSkill: 7, dunkSkill: 8, stealSkill: 6, onFire: false, hasBall: true, position: { x: 3.2, y: 0, z: -0.8 }, isHuman: true },
+        { id: 1, team: 0, shotSkill: 6, dunkSkill: 9, stealSkill: 5, onFire: false, hasBall: false, position: { x: 2.6, y: 0, z: 1.4 } },
+        { id: 2, team: 1, shotSkill: 8, dunkSkill: 6, stealSkill: 8, onFire: false, hasBall: false, position: { x: -2.6, y: 0, z: -1.3 } },
+        { id: 3, team: 1, shotSkill: 5, dunkSkill: 7, stealSkill: 7, onFire: false, hasBall: false, position: { x: -3.4, y: 0, z: 0.9 } }
       ],
       ball: {
-        position: { x: -1.2, y: 1.05, z: 4.2 },
+        position: { x: 3.2, y: 1.05, z: -0.8 },
         velocity: { x: 0, y: 0, z: 0 },
         inAir: false,
-        target: null
+        target: null,
+        passTargetPlayerId: null,
+        shotInFlight: false
       }
     }
   }
@@ -87,7 +89,7 @@ export class GameStateManager {
 
     const shooter = this.state.players[playerId]
     const hoop = shooter.team === 0 ? TEAM0_HOOP : TEAM1_HOOP
-    const isThreePoint = Math.hypot(shooter.position.x - hoop.x, shooter.position.z - hoop.z) > 4.8
+    const isThreePoint = Math.hypot(shooter.position.x - hoop.x, shooter.position.z - hoop.z) > 5.4
 
     const decision = evaluateShot({
       shooter,
@@ -136,19 +138,34 @@ export class GameStateManager {
   }
 
   public attemptPass(playerId = 0): void {
-    if (this.state.flow.passOff > 0 || this.state.inboundTeam !== null) return
+    if (this.state.flow.passOff > 0 || this.state.inboundTeam !== null || this.state.ball.inAir) return
     const passer = this.state.players[playerId]
     if (!passer.hasBall) return
 
     const teammate = this.state.players.find((p) => p.team === passer.team && p.id !== passer.id)
     if (!teammate) return
 
+    // lead pass target in receiver movement direction (placeholder directional lead)
+    const leadTarget = {
+      x: teammate.position.x + (teammate.team === 0 ? -0.45 : 0.45),
+      y: 1.05,
+      z: teammate.position.z
+    }
+
     passer.hasBall = false
-    teammate.hasBall = true
-    this.state.ball.position = { x: teammate.position.x, y: 1.05, z: teammate.position.z }
-    this.state.ball.inAir = false
+    this.state.ball.inAir = true
+    this.state.ball.shotInFlight = false
+    this.state.ball.passTargetPlayerId = teammate.id
+    this.state.ball.target = leadTarget
+    this.state.ball.position = { x: passer.position.x, y: 1.05, z: passer.position.z }
+    this.state.ball.velocity = {
+      x: clamp((leadTarget.x - passer.position.x) * 0.12, -0.35, 0.35),
+      y: 0.02,
+      z: clamp((leadTarget.z - passer.position.z) * 0.12, -0.35, 0.35)
+    }
+
     this.state.flow.passOff = 12
-    this.state.lastPlay = { event: 'pass', quality: 1 }
+    this.state.lastPlay = { event: 'pass', quality: 0.9 }
   }
 
   public attemptSteal(playerId = 0): void {
@@ -184,11 +201,9 @@ export class GameStateManager {
 
     this.state.lastPlay = { event: 'call_for_pass', quality: 1 }
 
-    if (this.state.flow.passOff <= 0) {
-      teammate.hasBall = false
-      caller.hasBall = true
-      this.state.ball.position = { x: caller.position.x, y: 1.05, z: caller.position.z }
-      this.state.flow.passOff = 10
+    if (this.state.flow.passOff <= 0 && !this.state.ball.inAir) {
+      // emulate #passtome behavior by initiating an immediate teammate pass
+      this.attemptPass(teammate.id)
     }
   }
 
@@ -226,6 +241,61 @@ export class GameStateManager {
     const { ball } = this.state
     if (!ball.inAir) return
 
+    if (!ball.shotInFlight && ball.passTargetPlayerId !== null) {
+      // pass flight + interception window
+      ball.position.x += ball.velocity.x
+      ball.position.y += ball.velocity.y
+      ball.position.z += ball.velocity.z
+
+      const targetPlayer = this.state.players.find((p) => p.id === ball.passTargetPlayerId)
+      if (!targetPlayer) {
+        ball.inAir = false
+        ball.shotInFlight = false
+        ball.passTargetPlayerId = null
+        ball.velocity = { x: 0, y: 0, z: 0 }
+        return
+      }
+
+      const defender = this.state.players.find((p) => {
+        if (p.team === targetPlayer.team) return false
+        const d = Math.hypot(p.position.x - ball.position.x, p.position.z - ball.position.z)
+        if (d > 0.8) return false
+        const chance = 0.12 + (p.stealSkill / 10) * 0.35 + this.state.rules.tuning.stealWindow * 0.2
+        return Math.random() < chance
+      })
+
+      if (defender) {
+        defender.hasBall = true
+        this.state.players.forEach((p) => {
+          if (p.id !== defender.id) p.hasBall = false
+        })
+        ball.position = { x: defender.position.x, y: 1.05, z: defender.position.z }
+        ball.inAir = false
+        ball.shotInFlight = false
+        ball.passTargetPlayerId = null
+        ball.velocity = { x: 0, y: 0, z: 0 }
+        this.state.lastPlay = { event: 'steal', quality: 0.75 }
+        this.state.flow.stealsOff = 24
+        return
+      }
+
+      const toTarget = Math.hypot(targetPlayer.position.x - ball.position.x, targetPlayer.position.z - ball.position.z)
+      if (toTarget < 0.55) {
+        targetPlayer.hasBall = true
+        this.state.players.forEach((p) => {
+          if (p.id !== targetPlayer.id) p.hasBall = false
+        })
+        ball.position = { x: targetPlayer.position.x, y: 1.05, z: targetPlayer.position.z }
+        ball.inAir = false
+        ball.shotInFlight = false
+        ball.passTargetPlayerId = null
+        ball.velocity = { x: 0, y: 0, z: 0 }
+        return
+      }
+
+      return
+    }
+
     ball.velocity.y -= 0.014
 
     ball.position.x += ball.velocity.x
@@ -239,6 +309,7 @@ export class GameStateManager {
       if (Math.abs(ball.velocity.y) < 0.03) {
         ball.velocity = { x: 0, y: 0, z: 0 }
         ball.inAir = false
+        ball.shotInFlight = false
       }
     }
   }
@@ -250,6 +321,8 @@ export class GameStateManager {
     const dz = finalTarget.z - from.z
 
     this.state.ball.inAir = true
+    this.state.ball.shotInFlight = true
+    this.state.ball.passTargetPlayerId = null
     this.state.ball.position = { x: from.x, y: 1.05, z: from.z }
     this.state.ball.target = finalTarget
     this.state.ball.velocity = {

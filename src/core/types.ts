@@ -13,6 +13,8 @@ export interface BallState {
   velocity: Vec3
   inAir: boolean
   target: Vec3 | null
+  passTargetPlayerId: number | null
+  shotInFlight: boolean
 }
 
 export interface PlayerState {

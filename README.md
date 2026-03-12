@@ -37,6 +37,10 @@
   - `steals_off` lockout timer (anti-steal-spam)
   - call-for-pass behavior (`C`) for teammate pass requests
   - basic drone decision loop (shoot/dunk/pass)
+  - leading pass trajectory with interception window checks
+- Updated gameplay camera and court orientation:
+  - camera tracks ball and frames a tighter gameplay subset
+  - hoop orientation switched to left/right court ends
 - Added keyboard gameplay controls:
   - `S` = Shot attempt
   - `D` = Dunk attempt
