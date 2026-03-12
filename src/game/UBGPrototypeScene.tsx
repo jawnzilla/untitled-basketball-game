@@ -14,21 +14,22 @@ function BroadcastCameraFollower({ target }: { target: [number, number, number] 
   useFrame(({ camera }) => {
     const [tx, _ty, tz] = target
 
-    const CAMERA_HEIGHT = 5.8
-    const BASE_Z = 8.6
-    const TRACK_X_CLAMP = 7.5
+    const TRACK_X_CLAMP = 7.2
+    const BASE_Y = 7.2
+    const BASE_Z = 11.2
 
-    // push in/out by depth; no dynamic tilt/roll
-    const zoomByDepth = THREE.MathUtils.clamp(tz * 0.55, -2.2, 2.2)
+    // push in/out on depth only (no tilt change)
+    const depthZoom = THREE.MathUtils.clamp(tz * 0.5, -2.4, 2.4)
 
     const camX = THREE.MathUtils.clamp(tx, -TRACK_X_CLAMP, TRACK_X_CLAMP)
-    const camZ = BASE_Z + zoomByDepth
+    const camY = BASE_Y
+    const camZ = BASE_Z + depthZoom
 
-    desired.set(camX, CAMERA_HEIGHT, camZ)
-    camera.position.lerp(desired, 0.09)
+    desired.set(camX, camY, camZ)
+    camera.position.lerp(desired, 0.1)
 
-    // fixed broadcast target height removes wobble from ball arc
-    look.set(tx, 1.2, tz)
+    // stable broadcast angle target; small depth influence to keep play centered
+    look.set(camX, 0.9, tz * 0.25)
     camera.lookAt(look)
   })
 
@@ -67,10 +68,10 @@ export function UBGPrototypeScene({ state }: Props) {
   const { ball, players } = state
 
   return (
-    <Canvas camera={{ position: [0, 5.8, 8.6], fov: 50 }}>
+    <Canvas camera={{ position: [0, 7.2, 11.2], fov: 47 }}>
       <color attach="background" args={['#0f172a']} />
-      <ambientLight intensity={0.65} />
-      <directionalLight position={[9, 13, 4]} intensity={1.2} />
+      <ambientLight intensity={0.72} />
+      <directionalLight position={[8, 14, 10]} intensity={1.25} />
 
       <mesh rotation-x={-Math.PI / 2} receiveShadow>
         <planeGeometry args={[18, 10]} />
