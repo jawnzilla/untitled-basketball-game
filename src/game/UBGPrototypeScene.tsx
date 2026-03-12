@@ -1,5 +1,4 @@
 import { Canvas, useFrame } from '@react-three/fiber'
-import { OrbitControls } from '@react-three/drei'
 import { useMemo } from 'react'
 import * as THREE from 'three'
 import type { GameState } from '../core/types'
@@ -8,13 +7,31 @@ interface Props {
   state: Readonly<GameState>
 }
 
-function CameraFollower({ target }: { target: [number, number, number] }) {
+function BroadcastCameraFollower({ target }: { target: [number, number, number] }) {
   const desired = useMemo(() => new THREE.Vector3(), [])
+
+  // Fixed broadcast profile:
+  // - camera stays behind bottom sideline (positive Z side)
+  // - fixed tilt/height feel
+  // - tracks ball mainly in X while preserving a stable presentation angle
   useFrame(({ camera }) => {
-    desired.set(target[0] + 6.5, 6.5, target[2] + 6.5)
-    camera.position.lerp(desired, 0.08)
-    camera.lookAt(target[0], 1.3, target[2])
+    const [tx, ty, tz] = target
+
+    const CAMERA_HEIGHT = 5.8
+    const SIDELINE_Z = 5.0
+    const BEHIND_SIDELINE_OFFSET = 3.6
+    const TRACK_X_CLAMP = 7.5
+
+    const camX = THREE.MathUtils.clamp(tx, -TRACK_X_CLAMP, TRACK_X_CLAMP)
+    const camZ = SIDELINE_Z + BEHIND_SIDELINE_OFFSET
+
+    desired.set(camX, CAMERA_HEIGHT, camZ)
+    camera.position.lerp(desired, 0.09)
+
+    // Keep the same broadcast angle; look at ball with slight forward bias
+    camera.lookAt(tx, Math.max(1.1, ty), tz * 0.92)
   })
+
   return null
 }
 
@@ -50,7 +67,7 @@ export function UBGPrototypeScene({ state }: Props) {
   const { ball, players } = state
 
   return (
-    <Canvas camera={{ position: [8, 7, 8], fov: 52 }}>
+    <Canvas camera={{ position: [0, 5.8, 8.6], fov: 50 }}>
       <color attach="background" args={['#0f172a']} />
       <ambientLight intensity={0.65} />
       <directionalLight position={[9, 13, 4]} intensity={1.2} />
@@ -77,8 +94,7 @@ export function UBGPrototypeScene({ state }: Props) {
         <meshStandardMaterial color="#cc5a1e" />
       </mesh>
 
-      <CameraFollower target={[ball.position.x, ball.position.y, ball.position.z]} />
-      <OrbitControls enablePan={false} maxPolarAngle={Math.PI / 2.05} minDistance={6} maxDistance={14} />
+      <BroadcastCameraFollower target={[ball.position.x, ball.position.y, ball.position.z]} />
     </Canvas>
   )
 }
