@@ -9,6 +9,7 @@ interface Props {
 
 function BroadcastCameraFollower({ target }: { target: [number, number, number] }) {
   const desired = useMemo(() => new THREE.Vector3(), [])
+  const look = useMemo(() => new THREE.Vector3(), [])
 
   useFrame(({ camera }) => {
     const [tx, _ty, tz] = target
@@ -17,9 +18,7 @@ function BroadcastCameraFollower({ target }: { target: [number, number, number] 
     const BASE_Z = 8.6
     const TRACK_X_CLAMP = 7.5
 
-    // push in/out with ball depth instead of changing tilt
-    // ball farther upcourt (negative z) => camera pushes in a bit
-    // ball closer to bottom sideline (positive z) => camera pulls out
+    // push in/out by depth; no dynamic tilt/roll
     const zoomByDepth = THREE.MathUtils.clamp(tz * 0.55, -2.2, 2.2)
 
     const camX = THREE.MathUtils.clamp(tx, -TRACK_X_CLAMP, TRACK_X_CLAMP)
@@ -28,11 +27,9 @@ function BroadcastCameraFollower({ target }: { target: [number, number, number] 
     desired.set(camX, CAMERA_HEIGHT, camZ)
     camera.position.lerp(desired, 0.09)
 
-    // fixed broadcast pitch/yaw to prevent tilt wobble
-    camera.rotation.order = 'YXZ'
-    camera.rotation.y = Math.PI
-    camera.rotation.x = -0.47
-    camera.rotation.z = 0
+    // fixed broadcast target height removes wobble from ball arc
+    look.set(tx, 1.2, tz)
+    camera.lookAt(look)
   })
 
   return null
