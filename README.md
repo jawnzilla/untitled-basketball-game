@@ -16,4 +16,18 @@
 *   [ ] **Phase 7: Visuals & UI** - Connect 3D models via Three.js and build React HUD.
 
 ## 📡 Active Directive
-*   Setup GitHub repository for progress tracking and formally structure the initial engine scaffolding.
+*   Begin coding the engine scaffold and prototype game loop.
+
+## ✅ Latest Build Progress
+- Initialized a modern web-native engine scaffold using **TypeScript + React + Three.js (R3F)**.
+- Added core runtime classes:
+  - `GameLoop` (fixed-step 60hz simulation loop)
+  - `GameStateManager` (authoritative game state + ball integration)
+  - `InputController` (keyboard input layer)
+- Added playable prototype scene with HUD and test shot arc (`Space` key).
+
+## 🚀 Run Local
+```bash
+npm install
+npm run dev
+```
